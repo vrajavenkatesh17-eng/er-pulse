@@ -1,5 +1,4 @@
 # 🚑 ER-Pulse: Tirunelveli Smart Triage & Dynamic Routing
-**CSBS Hackathon 2026** | Francis Xavier Engineering College
 
 ## 🎯 Problem Statement
 Tirunelveli corridor traffic (High Grounds / Bypass / Junction) + blind ambulance routing cause hospital ER rejections and fatal golden-hour delays.

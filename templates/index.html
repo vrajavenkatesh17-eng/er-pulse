@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- WATERMARK: DEVELOPED_AND_OWNED_BY_KRISH_2026 -->
+<head>
+    <meta charset="UTF-8">
+    <title>ER-Pulse // Enterprise Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+    <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <span class="text-2xl">🚑</span>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white">ER-PULSE // ENTERPRISE TRIAGE OS</h1>
+                <p class="text-xs text-slate-400">Multi-Hospital Telemetry & Dynamic EMS Corridor Orchestration</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full text-emerald-400 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>NETWORK SYNCHRONIZED</span>
+        </div>
+    </header>
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+        <section class="lg:col-span-5 space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">📡 Live EMS Dispatch Ingest</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Patient Incident Ref</label>
+                        <input id="patientId" type="text" value="ER-CASE-904" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Clinical Presentation</label>
+                        <select id="symptomCat" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
+                            <option>Acute Cardiac / Chest Pain</option>
+                            <option>High-Velocity Bypass Trauma / Accident</option>
+                            <option>Severe Burns / Critical Respiratory</option>
+                            <option>General Emergency / Stroke</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Fleet Lat (Corridor)</label>
+                            <input id="ambLat" type="number" step="0.0001" value="8.7200" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Fleet Lon (Corridor)</label>
+                            <input id="ambLon" type="number" step="0.0001" value="77.7150" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+                        </div>
+                    </div>
+                    <button onclick="runTriage()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2.5 rounded-lg text-sm transition">⚡ Compute Optimal Route</button>
+                </div>
+            </div>
+            <div id="recCard" class="bg-slate-900 border border-cyan-500/40 rounded-xl p-5 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs uppercase tracking-widest text-cyan-400 font-bold">Optimal Destination</span>
+                    <span id="reqSpecBadge" class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300">REQ::CARDIOLOGY</span>
+                </div>
+                <h3 id="recName" class="text-xl font-bold text-white mb-3">TVMC (High Grounds Govt Hospital)</h3>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-center">
+                        <div class="text-xs text-slate-400">Live ETA</div>
+                        <div id="recEta" class="text-lg font-bold text-cyan-400">4.2m</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-center">
+                        <div class="text-xs text-slate-400">ER Beds</div>
+                        <div id="recBeds" class="text-lg font-bold text-emerald-400">12</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-center">
+                        <div class="text-xs text-slate-400">ICU Buf</div>
+                        <div id="recIcu" class="text-lg font-bold text-white">4</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="lockBedAction()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2.5 rounded-lg transition">🔒 Lock Bed</button>
+                    <button onclick="jamAction()" class="bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-semibold py-2.5 rounded-lg transition">⚠️ Inject ER Jam</button>
+                </div>
+            </div>
+        </section>
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg flex-1 min-h-[380px] flex flex-col">
+                <div class="px-5 py-3 border-b border-slate-800 flex justify-between items-center">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">🗺️ OpenStreetMap Live Fleet & Topology</span>
+                    <span id="activeRecId" class="text-xs font-mono text-cyan-400">TARGET: H1</span>
+                </div>
+                <div id="map" class="w-full flex-1 min-h-[320px]"></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-3">🏥 Corridor Capacity Ledger</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="pb-2">ID</th>
+                                <th class="pb-2">Hospital Name</th>
+                                <th class="pb-2">Free ER</th>
+                                <th class="pb-2">ICU</th>
+                                <th class="pb-2">Specialties</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerBody" class="divide-y divide-slate-800/60"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        let map = L.map('map').setView([8.7200, 77.7180], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        let markers = [];
+        let polyline = null;
+        let currentBestId = "H1";
+        async function fetchSystemState() { await runTriage(); }
+        async function runTriage() {
+            const payload = {
+                patient_id: document.getElementById('patientId').value,
+                symptom_cat: document.getElementById('symptomCat').value,
+                amb_lat: parseFloat(document.getElementById('ambLat').value),
+                amb_lon: parseFloat(document.getElementById('ambLon').value)
+            };
+            const res = await fetch('/api/triage', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            const data = await res.json();
+            renderUI(data);
+        }
+        function renderUI(data) {
+            const best = data.recommended;
+            currentBestId = best.id;
+            document.getElementById('recName').innerText = best.name;
+            document.getElementById('recEta').innerText = best.eta_mins + 'm';
+            document.getElementById('recBeds').innerText = best.beds_free;
+            document.getElementById('recIcu').innerText = best.icu_free;
+            document.getElementById('activeRecId').innerText = 'TARGET: ' + best.id;
+            document.getElementById('reqSpecBadge').innerText = 'REQ::' + data.required_specialty.toUpperCase();
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+            if (polyline) map.removeLayer(polyline);
+            data.ranked_ledger.forEach(h => {
+                const isBest = h.id === best.id;
+                const color = isBest ? '#10B981' : '#0EA5E9';
+                const m = L.circleMarker([h.lat, h.lon], { radius: isBest ? 9 : 6, fillColor: color, color: '#fff', weight: 2, fillOpacity: 0.9 }).bindPopup(`<b>${h.name}</b><br>Free Beds: ${h.beds_free}<br>ETA: ${h.eta_mins}m`).addTo(map);
+                markers.push(m);
+            });
+            const ambLat = parseFloat(document.getElementById('ambLat').value);
+            const ambLon = parseFloat(document.getElementById('ambLon').value);
+            const ambMarker = L.circleMarker([ambLat, ambLon], { radius: 10, fillColor: '#EF4444', color: '#fff', weight: 2, fillOpacity: 1 }).bindPopup(`<b>Ambulance Fleet</b>`).addTo(map);
+            markers.push(ambMarker);
+            polyline = L.polyline([[ambLat, ambLon], [best.lat, best.lon]], { color: '#EF4444', weight: 3, dashArray: '6, 6' }).addTo(map);
+            const tbody = document.getElementById('ledgerBody');
+            tbody.innerHTML = '';
+            data.ranked_ledger.forEach(h => {
+                const bedColor = h.beds_free > 0 ? 'text-emerald-400' : 'text-rose-400';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="py-2 font-mono text-cyan-400 font-bold">${h.id}</td>
+                        <td class="py-2">${h.name}</td>
+                        <td class="py-2 font-bold ${bedColor}">${h.beds_free}</td>
+                        <td class="py-2">${h.icu_free}</td>
+                        <td class="py-2 text-slate-400 text-[11px]">${h.specialties}</td>
+                    </tr>
+                `;
+            });
+        }
+        async function lockBedAction() { await fetch(`/api/lock-bed/${currentBestId}`, {method: 'POST'}); runTriage(); }
+        async function jamAction() { await fetch(`/api/simulate-jam/${currentBestId}`, {method: 'POST'}); runTriage(); }
+        window.onload = fetchSystemState;
+    </script>
+</body>
+</html>

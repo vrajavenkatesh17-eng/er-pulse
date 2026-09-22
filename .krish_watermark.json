@@ -1,20 +1,6 @@
 {
-  "project": "ER-Pulse",
-  "system_title": "Enterprise Dynamic Emergency Triage & Spatial Load Balancing OS",
   "author": "Krish",
-  "owner": "Krishna Raja V",
-  "provenance_watermark": "DEVELOPED_AND_OWNED_BY_KRISH_2026",
-  "architecture": {
-    "backend": "FastAPI + Uvicorn + Pydantic v2",
-    "frontend": "Single-Page Application (HTML5 + Tailwind CSS + Leaflet.js)",
-    "geography": "Tirunelveli Medical Corridor, India"
-  },
-  "cryptographic_signatures": {
-    "algorithm": "SHA-256",
-    "main_py_sha256": "E3D185E8DE937D1645D603B87017F3BC7706A0BCAAAB06D674F414782FE281F6",
-    "index_html_sha256": "2E209610FF42BF171D1ECDB772BDF55BE3A328FADEDA990720FB6E3E89F9D3B6"
-  },
-  "release_type": "production",
-  "release_date": "2026-09-22",
-  "version": "2.0.0"
+  "project": "ER-Pulse Enterprise Health Platform",
+  "year": 2026,
+  "signature_hash": "krish_enterprise_sig_99887766"
 }

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ER-PULSE // HOSPITAL RECEIVING NODE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #050811; color: #f8fafc; font-family: 'Courier New', monospace; }
+        .alert-flash { animation: pulseRed 1.2s infinite; }
+        @keyframes pulseRed {
+            0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.7); border-color: #ef4444; }
+            50% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); border-color: #7f1d1d; }
+        }
+    </style>
+</head>
+<body class="p-8 h-screen flex flex-col justify-between">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+        <div>
+            <div class="text-xs text-cyan-400 font-bold tracking-widest">HL7/FHIR LIVE RECEIVING NODE</div>
+            <h1 id="nodeHospitalName" class="text-2xl font-bold text-white mt-1">TIRUNELVELI REGIONAL TRAUMA & CARDIAC MESH</h1>
+        </div>
+        <div id="statusBadge" class="px-4 py-2 rounded bg-emerald-950 border border-emerald-500 text-emerald-400 text-sm font-bold">
+            🟢 STANDBY // AWAITING EMS TELEMETRY
+        </div>
+    </div>
+
+    <div id="incomingPanel" class="my-auto mx-auto w-full max-w-3xl bg-slate-900/90 border-2 border-slate-800 rounded-xl p-8 text-center transition-all">
+        <div id="alertIcon" class="text-5xl mb-4">🏥</div>
+        <h2 id="alertTitle" class="text-2xl font-bold text-slate-300">NO ACTIVE INBOUND LOCKS</h2>
+        <p id="alertSub" class="text-sm text-slate-400 mt-2">Listening to ER-Pulse Spatial Triage Engine on Port 8001...</p>
+
+        <div id="patientDetails" class="hidden mt-6 grid grid-cols-3 gap-4 text-left bg-slate-950 p-4 rounded-lg border border-red-500/40">
+            <div>
+                <div class="text-xs text-slate-400">INCIDENT REF</div>
+                <div id="incRef" class="text-lg font-bold text-red-400">ER-CASE-904</div>
+            </div>
+            <div>
+                <div class="text-xs text-slate-400">CLINICAL PRESENTATION</div>
+                <div id="incCond" class="text-lg font-bold text-white">--</div>
+            </div>
+            <div>
+                <div class="text-xs text-slate-400">ESTIMATED ARRIVAL (OSRM)</div>
+                <div id="incEta" class="text-lg font-bold text-cyan-400">--</div>
+            </div>
+        </div>
+
+        <button id="ackBtn" onclick="acknowledgeAlert()" class="hidden mt-6 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-sm tracking-wider uppercase transition">
+            ✅ Acknowledge & Prepare Trauma / Cardiac Team
+        </button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6 border-t border-slate-800 pt-4">
+        <div class="bg-slate-900 p-4 rounded-lg border border-slate-800 flex justify-between items-center">
+            <span class="text-sm text-slate-400">LIVE AVAILABLE ER BEDS</span>
+            <span id="liveBeds" class="text-3xl font-bold text-emerald-400">12</span>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-lg border border-slate-800 flex justify-between items-center">
+            <span class="text-sm text-slate-400">LIVE AVAILABLE ICU BAYS</span>
+            <span id="liveIcu" class="text-3xl font-bold text-cyan-400">4</span>
+        </div>
+    </div>
+
+    <script>
+        let lastAckTimestamp = 0;
+
+        function checkDispatchSync() {
+            const raw = localStorage.getItem('er_pulse_active_dispatch');
+            if (!raw) return;
+            const dispatch = JSON.parse(raw);
+
+            if (dispatch.timestamp > lastAckTimestamp) {
+                document.getElementById('nodeHospitalName').innerText = dispatch.hospital_name;
+                document.getElementById('liveBeds').innerText = dispatch.beds_free;
+                document.getElementById('liveIcu').innerText = dispatch.icu_free;
+
+                const panel = document.getElementById('incomingPanel');
+                panel.className = "my-auto mx-auto w-full max-w-3xl bg-red-950/30 border-2 border-red-500 rounded-xl p-8 text-center alert-flash";
+
+                document.getElementById('statusBadge').className = "px-4 py-2 rounded bg-red-950 border border-red-500 text-red-400 text-sm font-bold animate-bounce";
+                document.getElementById('statusBadge').innerText = "🚨 INCOMING PRIORITY ADMISSION";
+
+                document.getElementById('alertIcon').innerText = "🚨";
+                document.getElementById('alertTitle').className = "text-2xl font-bold text-red-400";
+                document.getElementById('alertTitle').innerText = `BED LOCKED FOR ${dispatch.hospital_name.toUpperCase()}`;
+                document.getElementById('alertSub').innerText = "Automated Pre-Arrival Handshake Triggered by EMS Dispatch";
+
+                document.getElementById('incRef').innerText = dispatch.case_ref;
+                document.getElementById('incCond').innerText = dispatch.condition;
+                document.getElementById('incEta').innerText = `${dispatch.eta_mins} mins`;
+
+                document.getElementById('patientDetails').classList.remove('hidden');
+                document.getElementById('ackBtn').classList.remove('hidden');
+            }
+        }
+
+        function acknowledgeAlert() {
+            const raw = localStorage.getItem('er_pulse_active_dispatch');
+            if (raw) {
+                const dispatch = JSON.parse(raw);
+                lastAckTimestamp = dispatch.timestamp;
+            }
+            const panel = document.getElementById('incomingPanel');
+            panel.className = "my-auto mx-auto w-full max-w-3xl bg-emerald-950/20 border-2 border-emerald-500 rounded-xl p-8 text-center";
+            document.getElementById('statusBadge').className = "px-4 py-2 rounded bg-emerald-950 border border-emerald-500 text-emerald-400 text-sm font-bold";
+            document.getElementById('statusBadge').innerText = "✅ TEAM MOBILIZED // BED READY";
+            document.getElementById('alertIcon').innerText = "✅";
+            document.getElementById('alertTitle').className = "text-2xl font-bold text-emerald-400";
+            document.getElementById('alertTitle').innerText = "TRAUMA / CARDIAC TEAM MOBILIZED & WAITING";
+            document.getElementById('ackBtn').classList.add('hidden');
+        }
+
+        window.addEventListener('storage', checkDispatchSync);
+        setInterval(checkDispatchSync, 500);
+        checkDispatchSync();
+    </script>
+</body>
+</html>
